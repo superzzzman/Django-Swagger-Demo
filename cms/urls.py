@@ -16,6 +16,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from cms import settings
+
 # 重要的是如下三行
 from rest_framework.schemas import get_schema_view
 from rest_framework_swagger.renderers import SwaggerUIRenderer, OpenAPIRenderer
@@ -27,4 +29,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('docs/', schema_view, name='docs'),
+]
+
+urlpatterns += [
+    path('%s/' % settings.PRO_URL, include('apps.urls')),
 ]

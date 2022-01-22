@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+from libs.utils.config import Config
+from libs.utils.version import ReVersionList
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -25,8 +28,15 @@ SECRET_KEY = '-^miueqh-m8k2zpr75k6m&qqb$wkt$ti0!irsioy9=tkx^z+bo'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
+# 配置文件路径
+CONFIG_FILE = os.path.join(BASE_DIR, '.env')
+
+# 解析成配置字典
+CONFIG_INFO = Config(file=CONFIG_FILE).format()
+
+PRO_URL = CONFIG_INFO["server"]["root_url"]
 
 # Application definition
 
@@ -38,7 +48,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'rest_framework_swagger'
+    'rest_framework_swagger',
+    'apps'
 ]
 
 MIDDLEWARE = [
@@ -71,14 +82,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'cms.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': CONFIG_INFO['database']['schema'],
+        'HOST': CONFIG_INFO['database']['host'],
+        'PORT': CONFIG_INFO['database']['port'],
+        'USER': CONFIG_INFO['database']['user'],
+        'PASSWORD': CONFIG_INFO['database']['password'],
+        'CONN_MAX_AGE': int(CONFIG_INFO['database']['conn_max_age']),
+        'OPTIONS': {
+            'charset': 'utf8mb4'
+        }
     }
 }
 
@@ -105,15 +123,36 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'Asia/Shanghai'
 
-TIME_ZONE = 'UTC'
+LANGUAGE_CODE = 'zh-hans'
 
 USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False
+
+
+# DRF配置
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [],  # 全局认证类
+    'DEFAULT_PERMISSION_CLASSES': (
+       'rest_framework.permissions.AllowAny', # 允许所有人
+    ),
+    'EXCEPTION_HANDLER': 'core.drf.exception.exception_handler',  # 自定义异常替换默认全局异常
+    'UNAUTHENTICATED_USER': None,  # 更改默认 request.user = None 原本为 'AnonymousUser'
+    'UNAUTHENTICATED_TOKEN': None,   # 更改默认 request.auth = None
+    'DEFAULT_VERSIONING_CLASS': 'core.drf.version.ReqHeaderVersioning',  # 版本类
+    'DEFAULT_VERSION': '1.0.0',  # 默认版本号
+    # 'ALLOWED_VERSIONS': ReVersionList([r'[1-2]\.\d{1}\.\d{1,2}'])   # 允许的版本号
+    'ALLOWED_VERSIONS': ReVersionList([r'[1-9]?\d\.[1-9]?\d\.[1-9]?\d']),   # 允许的版本号
+    'DEFAULT_THROTTLE_RATES': {
+        # 'captcha_send': '1/m',  # 发送验证码，限制每分钟1次
+        # 'collection_add': '1/m',  # 新增收款信息，限制每分钟1次
+        # 'invoice_edit': '1/m',  # 修改开篇信息，限制每分钟1次
+    }
+}
 
 
 # Static files (CSS, JavaScript, Images)
@@ -139,7 +178,7 @@ SWAGGER_SETTINGS = {
     # 接口文档中方法列表以首字母升序排列
     'APIS_SORTER': 'alpha',
     # 如果支持json提交, 则接口文档中包含json输入框
-    'JSON_EDITOR': True,
+    'JSON_EDITOR': True,  # False，用户可以自己编辑格式，不用按照serializers中的数据添加。True，会有多个输入框，输入serializer对应的字段的值
     # 方法列表字母排序
     'OPERATIONS_SORTER': 'alpha',
     'VALIDATOR_URL': None,
