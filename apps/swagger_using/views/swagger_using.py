@@ -62,12 +62,12 @@ class ReturnJson(BaseView):
     #     DocParam("nalanxiao", required=False, description='rohero'),
     # )
 
-    # schema = AutoSchema(
-    #     manual_fields=[
-    #         coreapi.Field(name='code', required=False, location='form', description='', type='string'),
-    #     ]
-    # )
-    def get_v(self, request):
+    schema = AutoSchema(
+        manual_fields=[
+            coreapi.Field(name='code', required=False, location='form', description='', type='string', example={}, schema=""),
+        ]
+    )
+    def post(self, request):
         json_data = {'name': 'post', 'id': 0}
         return ajax_ok(json_data)
 
